@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src\DocumentManagerApi\DocumentManagerApi.csproj" Type="Classic C#" />
+  <Project Path="test\DocumentManagerApiTest\DocumentManagerApiTest.csproj" Type="Classic C#" />
+</Solution>
