@@ -20,10 +20,11 @@ stages:
           - task: UseDotNet@2
             inputs:
               packageType: 'sdk'
-              version: '8.x'
+              version: '9.x'
             displayName: "Install .NET SDK"
 
           - script: dotnet restore
+            workingDirectory: $(Build.SourcesDirectory)
             displayName: "Restore packages"
 
           - script: dotnet build --configuration $(buildConfiguration) --no-restore
@@ -42,7 +43,7 @@ stages:
           - task: UseDotNet@2
             inputs:
               packageType: 'sdk'
-              version: '8.x'
+              version: '9.x'
             displayName: "Install .NET SDK"
 
           - script: |
@@ -52,6 +53,7 @@ stages:
                 --collect:"XPlat Code Coverage" \
                 --logger trx
             displayName: "Run tests + coverage"
+            workingDirectory: $(Build.SourcesDirectory)
           
           # Publish test results
           - task: PublishTestResults@2
