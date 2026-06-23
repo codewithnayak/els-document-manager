@@ -2,49 +2,49 @@
 trigger: none
 
 # Run when Dockerfile changes
-pr: none
-trigger:
-  branches:
-    include:
-      - main
-  paths:
-    include:
-      - Dockerfile
-      - docker/**
-      - src/**/Dockerfile
+#pr: none
+# trigger:
+#   branches:
+#     include:
+#       - main
+#   paths:
+#     include:
+#       - Dockerfile
+#       - docker/**
+#       - src/**/Dockerfile
 
 pool:
   vmImage: ubuntu-latest
 
 variables:
-  imageName: 'yourapp'
-  acrName: 'youracr.azurecr.io'
+  imageName: "yourapp"
+  acrName: "youracr.azurecr.io"
 
 steps:
-# -------------------------------------------------------
-# 1. Run Pipeline A (CI) and wait for it to finish
-# -------------------------------------------------------
-- task: InvokeAzurePipelines@1
-  displayName: "Run Pipeline A (Build + Test + Coverage)"
-  inputs:
-    connectedServiceName: 'Your-Service-Connection-Name'
-    project: '$(System.TeamProject)'
-    definition: 'azure-pipelines-ci'   # Name of Pipeline A
-    waitForCompletion: true            # <-- IMPORTANT
-    parameters: |
-      buildConfiguration=Release
+  # -------------------------------------------------------
+  # 1. Run Pipeline A (CI) and wait for it to finish
+  # -------------------------------------------------------
+  - task: InvokeAzurePipelines@1
+    displayName: "Run Pipeline A (Build + Test + Coverage)"
+    inputs:
+      connectedServiceName: "Your-Service-Connection-Name"
+      project: "$(System.TeamProject)"
+      definition: "azure-pipelines-ci" # Name of Pipeline A
+      waitForCompletion: true # <-- IMPORTANT
+      parameters: |
+        buildConfiguration=Release
 
-# -------------------------------------------------------
-# 2. Build & Push Docker Image
-# -------------------------------------------------------
-- task: DockerInstaller@0
-  displayName: Install Docker
+  # -------------------------------------------------------
+  # 2. Build & Push Docker Image
+  # -------------------------------------------------------
+  - task: DockerInstaller@0
+    displayName: Install Docker
 
-- script: |
-    az acr login --name $(acrName)
-  displayName: ACR Login
+  - script: |
+      az acr login --name $(acrName)
+    displayName: ACR Login
 
-- script: |
-    docker build -t $(acrName)/$(imageName):$(Build.BuildId) .
-    docker push $(acrName)/$(imageName):$(Build.BuildId)
-  displayName: Build & Push Docker Image
+  - script: |
+      docker build -t $(acrName)/$(imageName):$(Build.BuildId) .
+      docker push $(acrName)/$(imageName):$(Build.BuildId)
+    displayName: Build & Push Docker Image
