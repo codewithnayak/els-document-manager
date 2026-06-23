@@ -2,7 +2,7 @@
 trigger: none
 
 # Run when Dockerfile changes
-#pr: none
+# pr: none
 # trigger:
 #   branches:
 #     include:
@@ -17,22 +17,32 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
+  buildConfiguration: "Release"
   imageName: "yourapp"
   acrName: "youracr.azurecr.io"
 
 steps:
   # -------------------------------------------------------
-  # 1. Run Pipeline A (CI) and wait for it to finish
+  # 1. Build + Test again (same as Pipeline A)
   # -------------------------------------------------------
-  - task: InvokeAzurePipelines@1
-    displayName: "Run Pipeline A (Build + Test + Coverage)"
+  - task: UseDotNet@2
     inputs:
-      connectedServiceName: "Your-Service-Connection-Name"
-      project: "$(System.TeamProject)"
-      definition: "azure-pipelines-ci" # Name of Pipeline A
-      waitForCompletion: true # <-- IMPORTANT
-      parameters: |
-        buildConfiguration=Release
+      packageType: "sdk"
+      version: "8.x"
+
+  - script: dotnet restore YourSolution.sln
+    displayName: Restore
+
+  - script: dotnet build YourSolution.sln --configuration $(buildConfiguration) --no-restore
+    displayName: Build
+
+  - script: |
+      dotnet test YourSolution.sln \
+        --configuration $(buildConfiguration) \
+        --no-build \
+        --collect:"XPlat Code Coverage" \
+        --logger trx
+    displayName: Test + Coverage
 
   # -------------------------------------------------------
   # 2. Build & Push Docker Image
@@ -40,9 +50,14 @@ steps:
   - task: DockerInstaller@0
     displayName: Install Docker
 
-  - script: |
-      az acr login --name $(acrName)
+  - task: AzureCLI@2
     displayName: ACR Login
+    inputs:
+      azureSubscription: "acr-connection"
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        az acr login --name $(acrName)
 
   - script: |
       docker build -t $(acrName)/$(imageName):$(Build.BuildId) .
