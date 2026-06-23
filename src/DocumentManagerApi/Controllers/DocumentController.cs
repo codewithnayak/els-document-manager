@@ -9,7 +9,8 @@ public class DocumentController : Controller
 {
     private readonly ILogger<DocumentController> _logger ;
     private readonly IDocumentService _documentService;
-    public DocumentController(ILogger<DocumentController> logger , IDocumentService documentService)
+
+    public DocumentController(ILogger<DocumentController> logger, IDocumentService documentService)
     {
         _logger = logger;
         _documentService = documentService;
@@ -20,8 +21,9 @@ public class DocumentController : Controller
     public async Task<IActionResult> Add()
     {
         var correlationId = HttpContext.Items["X-Correlation-ID"]?.ToString();
+        
         await _documentService.AddDocument();
-        _logger.LogInformation("Document added successfully for correlation id:{correlationId}" , correlationId);
+        _logger.LogInformation("Document added successfully for correlation id:{correlationId}", correlationId);
         return Created();
     }
 }
