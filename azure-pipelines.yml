@@ -1,10 +1,5 @@
-# ASP.NET Core
-# Build and test ASP.NET Core projects targeting .NET Core.
-# Add steps that run tests, create a NuGet package, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
-
 trigger:
-- main
+  - main
 
 pool:
   vmImage: ubuntu-latest
@@ -12,6 +7,64 @@ pool:
 variables:
   buildConfiguration: 'Release'
 
-steps:
-- script: dotnet build --configuration $(buildConfiguration)
-  displayName: 'dotnet build $(buildConfiguration)'
+stages:
+  # -------------------------
+  # BUILD STAGE
+  # -------------------------
+  - stage: Build
+    displayName: "Build Stage"
+    jobs:
+      - job: BuildJob
+        displayName: "Build .NET Project"
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              packageType: 'sdk'
+              version: '8.x'
+            displayName: "Install .NET SDK"
+
+          - script: dotnet restore
+            displayName: "Restore packages"
+
+          - script: dotnet build --configuration $(buildConfiguration) --no-restore
+            displayName: "Build project"
+  
+  # -------------------------
+  # TEST STAGE
+  # -------------------------
+  - stage: Test
+    displayName: "Test Stage"
+    dependsOn: Build
+    jobs:
+      - job: TestJob
+        displayName: "Run Tests with Coverage"
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              packageType: 'sdk'
+              version: '8.x'
+            displayName: "Install .NET SDK"
+
+          - script: |
+              dotnet test \
+                --configuration $(buildConfiguration) \
+                --no-build \
+                --collect:"XPlat Code Coverage" \
+                --logger trx
+            displayName: "Run tests + coverage"
+          
+          # Publish test results
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '**/*.trx'
+              failTaskOnFailedTests: true
+            displayName: "Publish test results"
+          
+          # Publish code coverage
+          - task: PublishCodeCoverageResults@2
+            inputs:
+              codeCoverageTool: 'cobertura'
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.cobertura.xml'
+              reportDirectory: '$(System.DefaultWorkingDirectory)'
+            displayName: "Publish code coverage"
