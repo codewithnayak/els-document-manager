@@ -30,16 +30,16 @@ steps:
       packageType: "sdk"
       version: "8.x"
 
-  - script: dotnet restore
+  - script: dotnet restore $(Build.SourcesDirectory)/els-document-manager.slnx
     workingDirectory: $(Build.SourcesDirectory)
     displayName: Restore
 
-  - script: dotnet build  --configuration $(buildConfiguration) --no-restore
+  - script: dotnet build $(Build.SourcesDirectory)/els-document-manager.slnx --configuration $(buildConfiguration) --no-restore
     workingDirectory: $(Build.SourcesDirectory)
     displayName: Build
 
   - script: |
-      dotnet test  \
+      dotnet test $(Build.SourcesDirectory)/els-document-manager.slnx \
         --configuration $(buildConfiguration) \
         --no-build \
         --collect:"XPlat Code Coverage" \
