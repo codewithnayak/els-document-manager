@@ -18,8 +18,8 @@ pool:
 
 variables:
   buildConfiguration: "Release"
-  imageName: "yourapp"
-  acrName: "youracr.azurecr.io"
+  imageName: "iels/iels-doc-manager"
+  acrName: "ielsacr.azurecr.io"
 
 steps:
   # -------------------------------------------------------
