@@ -28,7 +28,7 @@ steps:
   - task: UseDotNet@2
     inputs:
       packageType: "sdk"
-      version: "8.x"
+      version: "9.x"
 
   - script: dotnet restore $(Build.SourcesDirectory)/els-document-manager.slnx
     workingDirectory: $(Build.SourcesDirectory)
