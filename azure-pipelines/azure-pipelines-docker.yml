@@ -35,6 +35,7 @@ steps:
     displayName: Restore
 
   - script: dotnet build  --configuration $(buildConfiguration) --no-restore
+    workingDirectory: $(Build.SourcesDirectory)
     displayName: Build
 
   - script: |
@@ -43,6 +44,7 @@ steps:
         --no-build \
         --collect:"XPlat Code Coverage" \
         --logger trx
+    workingDirectory: $(Build.SourcesDirectory)
     displayName: Test + Coverage
 
   # -------------------------------------------------------
