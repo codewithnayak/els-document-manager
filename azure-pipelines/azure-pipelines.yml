@@ -1,11 +1,10 @@
-trigger:
-  - main
+trigger: none
 
 pool:
   vmImage: ubuntu-latest
 
 variables:
-  buildConfiguration: 'Release'
+  buildConfiguration: "Release"
 
 stages:
   # -------------------------
@@ -19,8 +18,8 @@ stages:
         steps:
           - task: UseDotNet@2
             inputs:
-              packageType: 'sdk'
-              version: '9.x'
+              packageType: "sdk"
+              version: "9.x"
             displayName: "Install .NET SDK"
 
           - script: dotnet restore
@@ -29,7 +28,7 @@ stages:
 
           - script: dotnet build --configuration $(buildConfiguration) --no-restore
             displayName: "Build project"
-  
+
   # -------------------------
   # TEST STAGE
   # -------------------------
@@ -42,8 +41,8 @@ stages:
         steps:
           - task: UseDotNet@2
             inputs:
-              packageType: 'sdk'
-              version: '9.x'
+              packageType: "sdk"
+              version: "9.x"
             displayName: "Install .NET SDK"
 
           - script: |
@@ -54,19 +53,19 @@ stages:
                 --logger trx
             displayName: "Run tests + coverage"
             workingDirectory: $(Build.SourcesDirectory)
-          
+
           # Publish test results
           - task: PublishTestResults@2
             inputs:
-              testResultsFormat: 'VSTest'
-              testResultsFiles: '**/*.trx'
+              testResultsFormat: "VSTest"
+              testResultsFiles: "**/*.trx"
               failTaskOnFailedTests: true
             displayName: "Publish test results"
-          
+
           # Publish code coverage
           - task: PublishCodeCoverageResults@2
             inputs:
-              codeCoverageTool: 'cobertura'
-              summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.cobertura.xml'
-              reportDirectory: '$(System.DefaultWorkingDirectory)'
+              codeCoverageTool: "cobertura"
+              summaryFileLocation: "$(System.DefaultWorkingDirectory)/**/coverage.cobertura.xml"
+              reportDirectory: "$(System.DefaultWorkingDirectory)"
             displayName: "Publish code coverage"
