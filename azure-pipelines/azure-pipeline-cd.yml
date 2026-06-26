@@ -1,0 +1,90 @@
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  buildConfiguration: "Release"
+  imageName: "iels/iels-doc-manager"
+  acrName: "ielsacr.azurecr.io"
+  webAppName: "iels-doc-manager-app" # <-- your App Service name
+  resourceGroup: "iels-rg" # <-- your RG name
+
+stages:
+  # ============================================================
+  # 1. BUILD + TEST + PUSH IMAGE TO ACR
+  # ============================================================
+  - stage: BuildAndPush
+    displayName: "Build, Test, Push Image"
+    jobs:
+      - job: BuildJob
+        displayName: "Build + Test + Push"
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              packageType: "sdk"
+              version: "9.x"
+
+          - script: dotnet restore
+            workingDirectory: $(Build.SourcesDirectory)
+            displayName: Restore
+
+          - script: dotnet build --configuration $(buildConfiguration) --no-restore
+            workingDirectory: $(Build.SourcesDirectory)
+            displayName: Build
+
+          - script: |
+              dotnet test \
+                --configuration $(buildConfiguration) \
+                --no-build \
+                --collect:"XPlat Code Coverage" \
+                --logger trx
+            workingDirectory: $(Build.SourcesDirectory)
+            displayName: Test + Coverage
+
+          - task: DockerInstaller@0
+            displayName: Install Docker
+
+          - task: AzureCLI@2
+            displayName: ACR Login
+            inputs:
+              azureSubscription: "acr-connection"
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az acr login --name $(acrName)
+
+          - script: |
+              docker build -t $(acrName)/$(imageName):$(Build.BuildId) .
+              docker push $(acrName)/$(imageName):$(Build.BuildId)
+            displayName: Build & Push Docker Image
+
+  # ============================================================
+  # 2. DEPLOY TO AZURE APP SERVICE
+  # ============================================================
+  - stage: Deploy
+    displayName: "Deploy to Azure App Service"
+    dependsOn: BuildAndPush
+    jobs:
+      - job: DeployJob
+        displayName: "Deploy Container"
+        steps:
+          - task: AzureCLI@2
+            displayName: "Deploy container to App Service"
+            inputs:
+              azureSubscription: "acr-connection"
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                echo "Updating App Service to use new container image..."
+
+                az webapp config container set \
+                  --name $(webAppName) \
+                  --resource-group $(resourceGroup) \
+                  --docker-custom-image-name $(acrName)/$(imageName):$(Build.BuildId) \
+                  --docker-registry-server-url https://$(acrName)
+
+                echo "Restarting App Service..."
+                az webapp restart \
+                  --name $(webAppName) \
+                  --resource-group $(resourceGroup)
